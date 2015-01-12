@@ -13,6 +13,7 @@
  * wxWindows Library License for more details.
  */
 
+#include "Mutex.h"
 #include "PixmapHash.h"
 #include "VisualHash.h"
 #include "WindowHash.h"
@@ -24,6 +25,9 @@ extern "C" {
 #include <X11/Xlib-xcb.h>
 }
 #endif
+
+#include <vector>
+#include <algorithm>
 
 using namespace vglserver;
 
@@ -39,8 +43,78 @@ static KeySym KeycodeToKeysym(Display *dpy, KeyCode keycode)
 }
 
 
-// Interposed X11 functions
+namespace vglfaker
+{
 
+class SafeDisplayList
+{
+	public:
+		void add(Display *display)
+		{
+			vglutil::CriticalSection::SafeLock lock(mutex);
+			if (!find(display))
+				displays.push_back(display);
+		}
+
+		void remove(Display *display)
+		{
+			vglutil::CriticalSection::SafeLock lock(mutex);
+			displays.erase(
+				std::find(displays.begin(), displays.end(), display));
+		}
+
+		bool find(Display *display)
+		{
+			vglutil::CriticalSection::SafeLock lock(mutex);
+			return std::find(displays.begin(), displays.end(), display)!=
+				displays.end();
+		}
+
+	private:
+		std::vector<Display*> displays;
+		vglutil::CriticalSection mutex;
+};
+SafeDisplayList excludedDisplays;
+
+bool excludeDisplay(const char *name)
+{
+	if(!name)
+	{
+		name = getenv("DISPLAY");
+		if(!name)
+		{
+			// The return value doesn't really matter because XOpenDisplay
+			// has to return null with no further action.
+			return false;
+		}
+	}
+
+	const char *list = fconfig.excludeddpys;
+	while(*list!=0)
+	{
+		int i;
+		// Finding the end of the next display name in the exclude list
+		for(i=0; list[i]!= 0 && list[i]!=';'; ++i)
+			;
+		// Comparing to name
+		if(strlen(name)==i && !strncmp(name, list, i))
+			return true;
+
+		list+=i;
+		if(*list==';')
+			++list;
+	}
+	return false;
+}
+
+bool isExcluded(Display *dpy)
+{
+	return excludedDisplays.find(dpy);
+}
+
+}
+
+// Interposed X11 functions
 
 extern "C" {
 
@@ -54,7 +128,13 @@ int XCloseDisplay(Display *dpy)
 	// after the global instances have been destroyed, so if this has occurred,
 	// we can't access fconfig or vglout or winh without causing deadlocks or
 	// other issues.
-	if(vglfaker::deadYet) return _XCloseDisplay(dpy);
+	if(vglfaker::deadYet)
+		return _XCloseDisplay(dpy);
+	if(vglfaker::isExcluded(dpy))
+	{
+		vglfaker::excludedDisplays.remove(dpy);
+		return _XCloseDisplay(dpy);
+	}
 
 	int retval=0;
 	TRY();
@@ -68,7 +148,6 @@ int XCloseDisplay(Display *dpy)
 		xcbconnhash.remove(conn);
 	}
 	#endif
-
 	winhash.remove(dpy);
 	retval=_XCloseDisplay(dpy);
 
@@ -84,6 +163,12 @@ int XCloseDisplay(Display *dpy)
 int XCopyArea(Display *dpy, Drawable src, Drawable dst, GC gc, int src_x,
 	int src_y, unsigned int width, unsigned int height, int dest_x, int dest_y)
 {
+	if(vglfaker::isExcluded(dpy))
+	{
+		return _XCopyArea(dpy, src, dst, gc, src_x, src_y,
+						  width, height, dest_x, dest_y);
+	}
+
 	TRY();
 
 	VirtualDrawable *srcVW=NULL;  VirtualDrawable *dstVW=NULL;
@@ -173,7 +258,14 @@ Window XCreateSimpleWindow(Display *dpy, Window parent, int x, int y,
 	unsigned int width, unsigned int height, unsigned int border_width,
 	unsigned long border, unsigned long background)
 {
+	if(vglfaker::isExcluded(dpy))
+	{
+		return _XCreateSimpleWindow(dpy, parent, x, y, width, height,
+									border_width, border, background);
+	}
+
 	Window win=0;
+
 	TRY();
 
 		opentrace(XCreateSimpleWindow);  prargd(dpy);  prargx(parent);  prargi(x);
@@ -181,7 +273,8 @@ Window XCreateSimpleWindow(Display *dpy, Window parent, int x, int y,
 
 	win=_XCreateSimpleWindow(dpy, parent, x, y, width, height, border_width,
 		border, background);
-	if(win && !is3D(dpy)) winhash.add(dpy, win);
+	if(win && !is3D(dpy))
+        winhash.add(dpy, win);
 
 		stoptrace();  prargx(win);  closetrace();
 
@@ -195,6 +288,12 @@ Window XCreateWindow(Display *dpy, Window parent, int x, int y,
 	int depth, unsigned int c_class, Visual *visual, unsigned long valuemask,
 	XSetWindowAttributes *attributes)
 {
+	if(vglfaker::isExcluded(dpy))
+	{
+		return _XCreateWindow(dpy, parent, x, y, width, height, border_width,
+							  depth, c_class, visual, valuemask, attributes);
+	}
+
 	Window win=0;
 	TRY();
 
@@ -232,6 +331,9 @@ static void DeleteWindow(Display *dpy, Window win, bool subOnly=false)
 
 int XDestroySubwindows(Display *dpy, Window win)
 {
+	if(vglfaker::isExcluded(dpy))
+		return _XDestroySubwindows(dpy, win);
+
 	int retval=0;
 	TRY();
 
@@ -249,6 +351,9 @@ int XDestroySubwindows(Display *dpy, Window win)
 
 int XDestroyWindow(Display *dpy, Window win)
 {
+	if(vglfaker::isExcluded(dpy))
+		return _XDestroyWindow(dpy, win);
+
 	int retval=0;
 	TRY();
 
@@ -288,6 +393,13 @@ Status XGetGeometry(Display *dpy, Drawable drawable, Window *root, int *x,
 	int *y, unsigned int *width_return, unsigned int *height_return,
 	unsigned int *border_width, unsigned int *depth)
 {
+	if(vglfaker::isExcluded(dpy))
+	{
+		return _XGetGeometry(
+			dpy, drawable, root, x, y, width_return, height_return,
+			border_width, depth);
+	}
+
 	Status ret=0;
 	unsigned int width=0, height=0;
 
@@ -325,6 +437,12 @@ XImage *XGetImage(Display *dpy, Drawable drawable, int x, int y,
 	unsigned int width, unsigned int height, unsigned long plane_mask,
 	int format)
 {
+	if(vglfaker::isExcluded(dpy))
+	{
+		return _XGetImage(dpy, drawable, x, y, width, height,
+						  plane_mask, format);
+	}
+
 	XImage *xi=NULL;
 
 		opentrace(XGetImage);  prargd(dpy);  prargx(drawable);  prargi(x);
@@ -346,6 +464,11 @@ XImage *XGetImage(Display *dpy, Drawable drawable, int x, int y,
 
 char **XListExtensions(Display *dpy, int *next)
 {
+	if(vglfaker::isExcluded(dpy))
+	{
+		return _XListExtensions(dpy, next);
+	}
+
 	char **list=NULL, *listStr=NULL;  int n, i;
 	int hasGLX=0, listLen=0;
 
@@ -408,7 +531,7 @@ char **XListExtensions(Display *dpy, int *next)
 // This is normally where VirtualGL initializes, unless a GLX function is
 // called first.
 
-Display *XOpenDisplay(_Xconst char* name)
+Display *XOpenDisplay(_Xconst char *name)
 {
 	Display *dpy=NULL;
 	#ifdef FAKEXCB
@@ -421,17 +544,27 @@ Display *XOpenDisplay(_Xconst char* name)
 
 	vglfaker::init();
 	dpy=_XOpenDisplay(name);
+
 	if(dpy)
 	{
-		if(strlen(fconfig.vendor)>0) ServerVendor(dpy)=strdup(fconfig.vendor);
 
-		#ifdef FAKEXCB
-		if(vglfaker::fakeXCB)
+		if (vglfaker::excludeDisplay(name))
 		{
-			conn=XGetXCBConnection(dpy);
-			if(conn) xcbconnhash.add(conn, dpy);
+			vglfaker::excludedDisplays.add(dpy);
 		}
-		#endif
+		else
+		{
+			if(strlen(fconfig.vendor)>0)
+				ServerVendor(dpy)=strdup(fconfig.vendor);
+
+			#ifdef FAKEXCB
+			if(vglfaker::fakeXCB)
+			{
+				conn=XGetXCBConnection(dpy);
+				if(conn) xcbconnhash.add(conn, dpy);
+			}
+			#endif
+		}
 	}
 
 		stoptrace();  prargd(dpy);
@@ -450,12 +583,14 @@ Display *XOpenDisplay(_Xconst char* name)
 Bool XQueryExtension(Display *dpy, _Xconst char *name, int *major_opcode,
 	int *first_event, int *first_error)
 {
-	Bool retval=True;
-
-	// Prevent recursion
-	if(is3D(dpy))
-		return _XQueryExtension(dpy, name, major_opcode, first_event, first_error);
+	if(vglfaker::isExcluded(dpy) || is3D(dpy))
+	{
+		return _XQueryExtension(dpy, name, major_opcode,
+								first_event, first_error);
+	}
 	////////////////////
+
+	Bool retval=True;
 
 		opentrace(XQueryExtension);  prargd(dpy);  prargs(name);  starttrace();
 
@@ -528,6 +663,11 @@ static void handleEvent(Display *dpy, XEvent *xe)
 
 Bool XCheckMaskEvent(Display *dpy, long event_mask, XEvent *xe)
 {
+	if(vglfaker::isExcluded(dpy))
+	{
+		return _XCheckMaskEvent(dpy, event_mask, xe);
+	}
+
 	Bool retval=0;
 	TRY();
 	if((retval=_XCheckMaskEvent(dpy, event_mask, xe))==True)
@@ -539,6 +679,11 @@ Bool XCheckMaskEvent(Display *dpy, long event_mask, XEvent *xe)
 
 Bool XCheckTypedEvent(Display *dpy, int event_type, XEvent *xe)
 {
+	if(vglfaker::isExcluded(dpy))
+	{
+		return _XCheckTypedEvent(dpy, event_type, xe);
+	}
+
 	Bool retval=0;
 	TRY();
 	if((retval=_XCheckTypedEvent(dpy, event_type, xe))==True)
@@ -551,6 +696,11 @@ Bool XCheckTypedEvent(Display *dpy, int event_type, XEvent *xe)
 Bool XCheckTypedWindowEvent(Display *dpy, Window win, int event_type,
 	XEvent *xe)
 {
+	if(vglfaker::isExcluded(dpy))
+	{
+		return _XCheckTypedWindowEvent(dpy, win, event_type, xe);
+	}
+
 	Bool retval=0;
 	TRY();
 	if((retval=_XCheckTypedWindowEvent(dpy, win, event_type, xe))==True)
@@ -562,6 +712,11 @@ Bool XCheckTypedWindowEvent(Display *dpy, Window win, int event_type,
 
 Bool XCheckWindowEvent(Display *dpy, Window win, long event_mask, XEvent *xe)
 {
+	if(vglfaker::isExcluded(dpy))
+	{
+		return _XCheckWindowEvent(dpy, win, event_mask, xe);
+	}
+
 	Bool retval=0;
 	TRY();
 	if((retval=_XCheckWindowEvent(dpy, win, event_mask, xe))==True)
@@ -574,6 +729,11 @@ Bool XCheckWindowEvent(Display *dpy, Window win, long event_mask, XEvent *xe)
 int XConfigureWindow(Display *dpy, Window win, unsigned int value_mask,
 	XWindowChanges *values)
 {
+	if(vglfaker::isExcluded(dpy))
+	{
+		return _XConfigureWindow(dpy, win, value_mask, values);
+	}
+
 	int retval=0;
 	TRY();
 
@@ -597,6 +757,11 @@ int XConfigureWindow(Display *dpy, Window win, unsigned int value_mask,
 
 int XMaskEvent(Display *dpy, long event_mask, XEvent *xe)
 {
+	if(vglfaker::isExcluded(dpy))
+	{
+		return _XMaskEvent(dpy, event_mask, xe);
+	}
+
 	int retval=0;
 	TRY();
 	retval=_XMaskEvent(dpy, event_mask, xe);
@@ -609,6 +774,11 @@ int XMaskEvent(Display *dpy, long event_mask, XEvent *xe)
 int XMoveResizeWindow(Display *dpy, Window win, int x, int y,
 	unsigned int width, unsigned int height)
 {
+	if(vglfaker::isExcluded(dpy))
+	{
+		return _XMoveResizeWindow(dpy, win, x, y, width, height);
+	}
+
 	int retval=0;
 	TRY();
 
@@ -628,6 +798,11 @@ int XMoveResizeWindow(Display *dpy, Window win, int x, int y,
 
 int XNextEvent(Display *dpy, XEvent *xe)
 {
+	if(vglfaker::isExcluded(dpy))
+	{
+		return _XNextEvent(dpy, xe);
+	}
+
 	int retval=0;
 	TRY();
 	retval=_XNextEvent(dpy, xe);
@@ -640,6 +815,11 @@ int XNextEvent(Display *dpy, XEvent *xe)
 int XResizeWindow(Display *dpy, Window win, unsigned int width,
 	unsigned int height)
 {
+	if(vglfaker::isExcluded(dpy))
+	{
+		return _XResizeWindow(dpy, win, width, height);
+	}
+
 	int retval=0;
 	TRY();
 
@@ -659,6 +839,11 @@ int XResizeWindow(Display *dpy, Window win, unsigned int width,
 
 int XWindowEvent(Display *dpy, Window win, long event_mask, XEvent *xe)
 {
+	if(vglfaker::isExcluded(dpy))
+	{
+		return _XWindowEvent(dpy, win, event_mask, xe);
+	}
+
 	int retval=0;
 	TRY();
 	retval=_XWindowEvent(dpy, win, event_mask, xe);
@@ -666,6 +851,5 @@ int XWindowEvent(Display *dpy, Window win, long event_mask, XEvent *xe)
 	CATCH();
 	return retval;
 }
-
 
 } // extern "C"

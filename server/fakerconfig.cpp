@@ -153,7 +153,6 @@ void fconfig_deleteinstance(void)
 	}
 }
 
-
 static void fconfig_init(void)
 {
 	CriticalSection::SafeLock l(fcmutex);
@@ -324,6 +323,14 @@ void fconfig_reloadenv(void)
 		}
 		if(drawable>=0 && (!fconfig_envset || fconfig_env.drawable!=drawable))
 			fconfig.drawable=fconfig_env.drawable=drawable;
+	}
+	if((env=getenv("VGL_EXCLUDE"))!=NULL && strlen(env)>0)
+	{
+		if(!fconfig_envset || strncmp(env, fconfig_env.excludeddpys, MAXSTR-1))
+		{
+			strncpy(fconfig.excludeddpys, env, MAXSTR-1);
+			strncpy(fconfig_env.excludeddpys, env, MAXSTR-1);
+		}
 	}
 	fetchenv_bool("VGL_FORCEALPHA", forcealpha);
 	fetchenv_dbl("VGL_FPS", fps, 0.0, 1000000.0);
@@ -570,6 +577,7 @@ void fconfig_print(FakerConfig &fc)
 	prconfstr(config);
 	prconfstr(defaultfbconfig);
 	prconfint(drawable);
+	prconfstr(excludeddpys);
 	prconfdbl(fps);
 	prconfdbl(flushdelay);
 	prconfint(forcealpha);

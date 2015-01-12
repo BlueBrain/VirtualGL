@@ -3312,6 +3312,44 @@ If &ldquo;Custom (if supported)&rdquo; is listed as one of the available Image T
 <table class="standard">
   <tr class="standard">
     <td class="high standard">Environment Variable</td>
+    <td class="standard"><code>VGL_EXCLUDE&nbsp;=&nbsp;</code><em><code>{d[;d...]}</code></em></td>
+  </tr>
+  <tr class="standard">
+    <td class="high standard">Summary</td>
+    <td class="standard"><em><code>{d[;d...]}</code></em> = A semicolon separated list of displays to ignore </td>
+  </tr>
+  <tr class="standard">
+    <td class="high standard">Image Transports</td>
+    <td class="standard">All</td>
+  </tr>
+  <tr class="standard">
+    <td class="high standard">Default Value</td>
+    <td class="standard">None</td>
+  </tr>
+</table>
+</div>
+
+
+<dl class="Description">
+    <dt class="Description-1 Description">Description</dt>
+    <dd class="Description-1 Description">
+        This option allows the user to provide a list of displays for which
+        VirtualGL must be bypassed. The list is a single string of semicolon
+        separated display names. When a connection to a display server is opened,
+        VirtualGL checks if the display name appears in the list (the content
+        of <code>DISPLAY</code> is used in case no name is provided to
+        <code>XOpenDisplay</code>). In that case, the display is appended to the
+        list of displays ignored by VirtualGL. This is useful for multi-GPU
+        machines where a parallel rendering application wants to make use direct
+        use of some of the GPUs and apply VirtualGL interposition only to the GPU
+        used for displaying the final result.
+    </dd>
+</dl>
+
+<div class="table">
+<table class="standard">
+  <tr class="standard">
+    <td class="high standard">Environment Variable</td>
     <td class="standard"><code>VGL_FAKEXCB&nbsp;=&nbsp;</code><em><code>0&nbsp;|&nbsp;1</code></em></td>
   </tr>
   <tr class="standard">

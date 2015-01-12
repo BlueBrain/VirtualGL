@@ -33,6 +33,8 @@ namespace vglfaker
 	extern void safeExit(int);
 	extern int deadYet;
 	extern int traceLevel;
+	extern bool excludeDisplay(const char *name);
+	extern bool isExcluded(Display *dpy);
 	#ifdef FAKEXCB
 	extern bool fakeXCB;
 	extern __thread int fakerLevel;

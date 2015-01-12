@@ -461,6 +461,9 @@ VFUNCDEF3(glXSwapIntervalEXT, Display *, dpy, GLXDrawable, drawable, int,
 
 FUNCDEF1(int, glXSwapIntervalSGI, int, interval);
 
+// GLX_SGIX_fbconfig
+
+VFUNCDEF2(glXGetFBConfigFromVisualSGIX, Display *, dpy, XVisualInfo *, vis);
 
 // GL functions
 

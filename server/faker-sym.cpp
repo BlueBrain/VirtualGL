@@ -215,6 +215,8 @@ static int loadGLSymbols(void *dllhnd)
 	LSYMOPT(glXImportContextEXT)
 	LSYMOPT(glXQueryContextInfoEXT)
 
+	LSYMOPT(glXGetFBConfigFromVisualSGIX)
+
 	LSYMOPT(glXJoinSwapGroupNV)
 	LSYMOPT(glXBindSwapBarrierNV)
 	LSYMOPT(glXQuerySwapGroupNV)

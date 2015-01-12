@@ -157,6 +157,7 @@ typedef struct _FakerConfig
   char config[MAXSTR];
   char defaultfbconfig[MAXSTR];
   char drawable;
+  char excludeddpys[MAXSTR];
   double flushdelay;
   int forcealpha;
   double fps;

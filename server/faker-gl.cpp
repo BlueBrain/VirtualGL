@@ -25,6 +25,13 @@ using namespace vglserver;
 
 #define ROUND(f) ((f)>=0? (long)((f)+0.5) : (long)((f)-0.5))
 
+#define BYPASS_FAKER(function) \
+	Display *dpy = _glXGetCurrentDisplay(); \
+	if(vglfaker::isExcluded(dpy))           \
+	{                                       \
+		function;                           \
+		return;                             \
+	}
 
 static void doGLReadback(bool spoilLast, bool sync)
 {
@@ -58,6 +65,8 @@ extern "C" {
 
 void glFinish(void)
 {
+	BYPASS_FAKER(_glFinish());
+
 	TRY();
 
 		if(fconfig.trace) vglout.print("[VGL] glFinish()\n");
@@ -72,6 +81,8 @@ void glFinish(void)
 
 void glFlush(void)
 {
+	BYPASS_FAKER(_glFlush());
+
 	static double lastTime=-1.;  double thisTime;
 
 	TRY();
@@ -97,6 +108,8 @@ void glFlush(void)
 
 void glXWaitGL(void)
 {
+	BYPASS_FAKER(_glXWaitGL());
+
 	TRY();
 
 		if(fconfig.trace) vglout.print("[VGL] glXWaitGL()\n");
@@ -119,6 +132,8 @@ void glXWaitGL(void)
 
 void glDrawBuffer(GLenum mode)
 {
+	BYPASS_FAKER(_glDrawBuffer(mode));
+
 	TRY();
 
 	if(ctxhash.overlayCurrent()) { _glDrawBuffer(mode);  return; }
@@ -152,6 +167,8 @@ void glDrawBuffer(GLenum mode)
 
 void glPopAttrib(void)
 {
+	BYPASS_FAKER(_glPopAttrib());
+
 	TRY();
 
 	if(ctxhash.overlayCurrent()) { _glPopAttrib();  return; }
@@ -187,6 +204,8 @@ void glPopAttrib(void)
 
 void glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 {
+	BYPASS_FAKER(_glViewport(x, y, width, height));
+
 	TRY();
 
 	if(ctxhash.overlayCurrent()) { _glViewport(x, y, width, height);  return; }
@@ -235,6 +254,8 @@ void glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 
 void glClearIndex(GLfloat c)
 {
+	BYPASS_FAKER(_glClearIndex(c))
+
 	if(EMULATE_CI) glClearColor(c/255., 0., 0., 0.);
 	else _glClearIndex(c);
 }
@@ -254,6 +275,8 @@ void glClearIndex(GLfloat c)
 void glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum type,
 	const GLvoid *pixels)
 {
+	BYPASS_FAKER(_glDrawPixels(width, height, format, type, pixels));
+
 	TRY();
 
 	if(format==GL_COLOR_INDEX && !ctxhash.overlayCurrent() && type!=GL_BITMAP)
@@ -289,6 +312,8 @@ void glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum type,
 
 void glGetDoublev(GLenum pname, GLdouble *params)
 {
+	BYPASS_FAKER(_glGetDoublev(pname, params));
+
 	if(EMULATE_CI)
 	{
 		if(pname==GL_CURRENT_INDEX)
@@ -324,6 +349,8 @@ void glGetDoublev(GLenum pname, GLdouble *params)
 
 void glGetFloatv(GLenum pname, GLfloat *params)
 {
+	BYPASS_FAKER(_glGetFloatv(pname, params));
+
 	if(EMULATE_CI)
 	{
 		if(pname==GL_CURRENT_INDEX)
@@ -361,6 +388,8 @@ void glGetFloatv(GLenum pname, GLfloat *params)
 
 void glGetIntegerv(GLenum pname, GLint *params)
 {
+	BYPASS_FAKER(_glGetIntegerv(pname, params));
+
 	if(EMULATE_CI)
 	{
 		if(pname==GL_CURRENT_INDEX)
@@ -398,36 +427,48 @@ void glGetIntegerv(GLenum pname, GLint *params)
 
 void glIndexd(GLdouble index)
 {
+	BYPASS_FAKER(_glIndexd(index));
+
 	if(EMULATE_CI) glColor3d(index/255., 0.0, 0.0);
 	else _glIndexd(index);
 }
 
 void glIndexf(GLfloat index)
 {
+	BYPASS_FAKER(_glIndexf(index));
+
 	if(EMULATE_CI) glColor3f(index/255., 0., 0.);
 	else _glIndexf(index);
 }
 
 void glIndexi(GLint index)
 {
+	BYPASS_FAKER(_glIndexi(index));
+
 	if(EMULATE_CI) glColor3f((GLfloat)index/255., 0, 0);
 	else _glIndexi(index);
 }
 
 void glIndexs(GLshort index)
 {
+	BYPASS_FAKER(_glIndexs(index));
+
 	if(EMULATE_CI) glColor3f((GLfloat)index/255., 0, 0);
 	else _glIndexs(index);
 }
 
 void glIndexub(GLubyte index)
 {
+	BYPASS_FAKER(_glIndexub(index));
+
 	if(EMULATE_CI) glColor3f((GLfloat)index/255., 0, 0);
 	else _glIndexub(index);
 }
 
 void glIndexdv(const GLdouble *index)
 {
+	BYPASS_FAKER(_glIndexdv(index));
+
 	if(EMULATE_CI)
 	{
 		GLdouble color[3]={index? (*index)/255.:0., 0., 0.};
@@ -438,6 +479,8 @@ void glIndexdv(const GLdouble *index)
 
 void glIndexfv(const GLfloat *index)
 {
+	BYPASS_FAKER(_glIndexfv(index));
+
 	if(EMULATE_CI)
 	{
 		GLfloat color[3]={index? (*index)/255.0f:0.0f, 0.0f, 0.0f};
@@ -448,6 +491,8 @@ void glIndexfv(const GLfloat *index)
 
 void glIndexiv(const GLint *index)
 {
+	BYPASS_FAKER(_glIndexiv(index));
+
 	if(EMULATE_CI)
 	{
 		GLfloat color[3]={index? (GLfloat)(*index)/255.0f:0.0f, 0.0f, 0.0f};
@@ -458,6 +503,8 @@ void glIndexiv(const GLint *index)
 
 void glIndexsv(const GLshort *index)
 {
+	BYPASS_FAKER(_glIndexsv(index));
+
 	if(EMULATE_CI)
 	{
 		GLfloat color[3]={index? (GLfloat)(*index)/255.0f:0.0f, 0.0f, 0.0f};
@@ -468,6 +515,8 @@ void glIndexsv(const GLshort *index)
 
 void glIndexubv(const GLubyte *index)
 {
+	BYPASS_FAKER(_glIndexubv(index));
+
 	if(EMULATE_CI)
 	{
 		GLfloat color[3]={index? (GLfloat)(*index)/255.0f:0.0f, 0.0f, 0.0f};
@@ -479,6 +528,8 @@ void glIndexubv(const GLubyte *index)
 
 void glMaterialfv(GLenum face, GLenum pname, const GLfloat *params)
 {
+	BYPASS_FAKER(_glMaterialfv(face, pname, params));
+
 	GLfloat mat[]={1., 1., 1., 1.};
 
 	if(pname==GL_COLOR_INDEXES && params)
@@ -496,6 +547,8 @@ void glMaterialfv(GLenum face, GLenum pname, const GLfloat *params)
 
 void glMaterialiv(GLenum face, GLenum pname, const GLint *params)
 {
+	BYPASS_FAKER(_glMaterialiv(face, pname, params));
+
 	GLfloat mat[]={1., 1., 1., 1.};
 
 	if(pname==GL_COLOR_INDEXES && params)
@@ -513,6 +566,8 @@ void glMaterialiv(GLenum face, GLenum pname, const GLint *params)
 
 void glPixelTransferf(GLenum pname, GLfloat param)
 {
+	BYPASS_FAKER(_glPixelTransferf(pname, param));
+
 	if(EMULATE_CI)
 	{
 		if(pname==GL_INDEX_SHIFT)
@@ -532,6 +587,8 @@ void glPixelTransferf(GLenum pname, GLfloat param)
 
 void glPixelTransferi(GLenum pname, GLint param)
 {
+	BYPASS_FAKER(_glPixelTransferi(pname, param));
+
 	if(EMULATE_CI)
 	{
 		if(pname==GL_INDEX_SHIFT)
@@ -564,6 +621,8 @@ void glPixelTransferi(GLenum pname, GLint param)
 void glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height,
 	GLenum format, GLenum type, GLvoid *pixels)
 {
+	BYPASS_FAKER(_glReadPixels(x, y, width, height, format, type, pixels));
+
 	TRY();
 
 	if(format==GL_COLOR_INDEX && !ctxhash.overlayCurrent() && type!=GL_BITMAP)

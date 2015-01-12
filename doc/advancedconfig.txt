@@ -169,6 +169,23 @@ Each method of configuration takes precedence over the previous method:
 	VirtualGL to redirect all of the 3D rendering from the application to a GPU
 	attached to Screen 1 on X display :0.
 
+| Environment Variable | ''VGL_EXCLUDE = ''__''{d[;d...]}''__ |
+| Summary | __''{d[;d...]}''__ = A semicolon separated list of displays to ignore |
+| Image Transports | All |
+| Default Value | None |
+#OPT: hiCol=first
+
+	Description :: This option allows the user to provide a list of displays
+	for which VirtualGL must be bypassed. The list is a single string of
+	semicolon separated display names. When a connection to a display
+	server is opened, VirtualGL checks if the display name appears in the list
+	(the content of DISPLAY is used in case no name is provided to
+	XOpenDisplay). In that case, the display is appended to the list of
+	displays ignored by VirtualGL. This is useful for multi-GPU machines
+	where a parallel rendering application wants to make use direct use of
+	some of the GPUs and apply VirtualGL interposition only to the GPU used
+	for displaying the final result.
+
 | Environment Variable | ''VGL_FAKEXCB = ''__''0 \| 1''__ |
 | ''vglrun'' argument | ''-xcb'' / ''+xcb'' |
 | Summary | Disable/enable XCB interposer |
