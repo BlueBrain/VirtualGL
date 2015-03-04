@@ -31,7 +31,7 @@ extern "C" {
 namespace vglfaker
 {
 	extern void safeExit(int);
-	extern void init(void);
+	extern void init(bool=false);
 	#ifdef FAKEXCB
 	extern __thread int fakerLevel;
 	#endif
