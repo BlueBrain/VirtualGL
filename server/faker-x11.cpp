@@ -463,7 +463,7 @@ Display *XOpenDisplay(_Xconst char* name)
 
 		opentrace(XOpenDisplay);  prargs(name);  starttrace();
 
-	vglfaker::init();
+	vglfaker::init(true);
 	dpy=_XOpenDisplay(name);
 	if(dpy)
 	{

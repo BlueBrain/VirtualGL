@@ -107,16 +107,18 @@ int xhandler(Display *dpy, XErrorEvent *xe)
 
 // Called from XOpenDisplay(), unless a GLX function is called first
 
-void init(void)
+void init(bool reloadenv)
 {
 	static int init=0;
 
 	if(init) return;
 	CriticalSection::SafeLock l(globalMutex);
+
+	if(reloadenv || !init) fconfig_reloadenv();
+
 	if(init) return;
 	init=1;
 
-	fconfig_reloadenv();
 	if(strlen(fconfig.log)>0) vglout.logTo(fconfig.log);
 
 	if(fconfig.verbose)
