@@ -5,6 +5,8 @@
 cmake_minimum_required(VERSION 2.8)
 set(CMAKE_LEGACY_CYGWIN_WIN32 0) # Remove when CMake >= 2.8.4 is required
 
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmakescripts)
+
 if(UNIX)
 	set(CMAKE_INSTALL_PREFIX /opt/VirtualGL CACHE PATH
 		"Install path prefix, prepended onto install directories.")
@@ -270,7 +272,7 @@ else()
 	message(STATUS "X Video not available")
 endif()
 
-include(cmakescripts/FindTurboJPEG.cmake)
+find_package(TurboJPEG REQUIRED)
 
 if(NOT CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
 	set(LIBDL dl)
