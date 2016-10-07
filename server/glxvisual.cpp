@@ -263,7 +263,12 @@ GLXFBConfig *configsFromVisAttribs(const int attribs[],
 	if(fconfig.drawable==RRDRAWABLE_PIXMAP)
 		glxattribs[j++]=GLX_PIXMAP_BIT|GLX_WINDOW_BIT;
 	else
-		glxattribs[j++]=GLX_PIXMAP_BIT|GLX_PBUFFER_BIT;
+	{
+        if (samples==-1)
+            glxattribs[j++]=GLX_PIXMAP_BIT|GLX_PBUFFER_BIT;
+        else
+            glxattribs[j++]=GLX_PBUFFER_BIT;
+	}
 	glxattribs[j++]=GLX_X_VISUAL_TYPE;  glxattribs[j++]=visualType;
 	glxattribs[j]=None;
 
