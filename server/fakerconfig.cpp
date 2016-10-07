@@ -1,4 +1,4 @@
-/* Copyright (C)2009-2015 D. R. Commander
+/* Copyright (C)2009-2016 D. R. Commander
  *
  * This library is free software and may be redistributed and/or modified under
  * the terms of the wxWindows Library License, Version 3.1 or (at your option)
@@ -161,6 +161,9 @@ static void fconfig_init(void)
 	memset(&fconfig_env, 0, sizeof(FakerConfig));
 	fconfig.compress=-1;
 	strncpy(fconfig.config, VGLCONFIG_PATH, MAXSTR);
+	#if sun
+	fconfig.dlsymloader=true;
+	#endif
 	#ifdef FAKEXCB
 	fconfig.fakeXCB=1;
 	#endif
@@ -315,6 +318,7 @@ void fconfig_reloadenv(void)
 			strncpy(fconfig_env.localdpystring, env, MAXSTR-1);
 		}
 	}
+	fetchenv_bool("VGL_DLSYM", dlsymloader);
 	if((env=getenv("VGL_DRAWABLE"))!=NULL && strlen(env)>0)
 	{
 		int drawable=-1;
@@ -365,6 +369,7 @@ void fconfig_reloadenv(void)
 	}
 	fetchenv_bool("VGL_GLFLUSHTRIGGER", glflushtrigger);
 	fetchenv_str("VGL_GLLIB", gllib);
+	fetchenv_str("VGL_GLXVENDOR", glxvendor);
 	fetchenv_str("VGL_GUI", guikeyseq);
 	if(strlen(fconfig.guikeyseq)>0)
 	{
@@ -582,6 +587,7 @@ void fconfig_print(FakerConfig &fc)
 	prconfint(compress);
 	prconfstr(config);
 	prconfstr(defaultfbconfig);
+	prconfint(dlsymloader);
 	prconfint(drawable);
 	prconfstr(excludeddpys);
 	prconfdbl(fps);
@@ -590,6 +596,7 @@ void fconfig_print(FakerConfig &fc)
 	prconfdbl(gamma);
 	prconfint(glflushtrigger);
 	prconfstr(gllib);
+	prconfstr(glxvendor);
 	prconfint(gui);
 	prconfint(guikey);
 	prconfstr(guikeyseq);

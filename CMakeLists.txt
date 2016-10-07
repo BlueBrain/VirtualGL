@@ -2,8 +2,12 @@
 # Setup
 #
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.11)
 set(CMAKE_LEGACY_CYGWIN_WIN32 0) # Remove when CMake >= 2.8.4 is required
+# Shut up CMake 3.1 and later
+if(POLICY CMP0053)
+	cmake_policy(SET CMP0053 OLD)
+endif()
 
 if(UNIX)
 	set(CMAKE_INSTALL_PREFIX /opt/VirtualGL CACHE PATH
@@ -15,25 +19,9 @@ if(WIN32)
 else()
 	project(VirtualGL)
 endif()
-set(VERSION 2.4.80)
+set(VERSION 2.5.1)
 
-if(UNIX)
-	execute_process(COMMAND "date" "+%Y%m%d" OUTPUT_VARIABLE BUILD)
-	string(REGEX REPLACE "\n" "" BUILD ${BUILD})
-elseif(WIN32)
-	execute_process(COMMAND "wmic.exe" "os" "get" "LocalDateTime" OUTPUT_VARIABLE
-		BUILD)
-	string(REGEX REPLACE "[^0-9]" "" BUILD "${BUILD}")
-	if (BUILD STREQUAL "")
-		execute_process(COMMAND "cmd.exe" "/C" "DATE" "/T" OUTPUT_VARIABLE BUILD)
-		string(REGEX REPLACE ".*[ ]([0-9]*)[/.]([0-9]*)[/.]([0-9]*).*" "\\3\\2\\1" BUILD "${BUILD}")
-	else()
-		string(SUBSTRING "${BUILD}" 0 8 BUILD)
-	endif()
-else()
-	message(FATAL_ERROR "Platform not supported.")
-endif()
-string(REGEX REPLACE "\n" "" BUILD ${BUILD})
+string(TIMESTAMP BUILD "%Y%m%d")
 
 if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Release)
@@ -174,28 +162,26 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "SunOS")
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mt")
-	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -mt -lc")
+	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lc")
 	set(MAPFLAG "-Wl,-M,")
-	if("${CMAKE_CXX_COMPILER_ID}" MATCHES SunPro)
+	if("${CMAKE_C_COMPILER_ID} ${CMAKE_CXX_COMPILER_ID}" MATCHES SunPro)
+		add_definitions(-mt -norunpath)
+		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mt")
 		set(CMAKE_SHARED_LINKER_FLAGS
-			"-z direct -lCrun -z nodirect ${CMAKE_SHARED_LINKER_FLAGS}")
+			"-z direct -lCrun -z nodirect -mt ${CMAKE_SHARED_LINKER_FLAGS}")
 		set(MAPFLAG "-M")
-	endif()
-endif()
 
-if("${CMAKE_C_COMPILER_ID} ${CMAKE_CXX_COMPILER_ID}" MATCHES SunPro)
-	add_definitions(-mt -norunpath)
-	# Use the maximum optimization level for release builds
-	foreach(var CMAKE_C_FLAGS_RELEASE CMAKE_C_FLAGS_RELWITHDEBINFO
-		CMAKE_CXX_FLAGS_RELEASE CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-		if(${var} MATCHES "-xO3")
-			string(REGEX REPLACE "-xO3" "-xO5" ${var} "${${var}}")
-		endif()
-		if(${var} MATCHES "-xO2")
-			string(REGEX REPLACE "-xO2" "-xO5" ${var} "${${var}}")
-		endif()
-	endforeach()
+		# Use the maximum optimization level for release builds
+		foreach(var CMAKE_C_FLAGS_RELEASE CMAKE_C_FLAGS_RELWITHDEBINFO
+			CMAKE_CXX_FLAGS_RELEASE CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+			if(${var} MATCHES "-xO3")
+				string(REGEX REPLACE "-xO3" "-xO5" ${var} "${${var}}")
+			endif()
+			if(${var} MATCHES "-xO2")
+				string(REGEX REPLACE "-xO2" "-xO5" ${var} "${${var}}")
+			endif()
+		endforeach()
+	endif()
 endif()
 
 option(VGL_USESSL
@@ -276,10 +262,22 @@ if(NOT CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
 	set(LIBDL dl)
 endif()
 
+endif() # WIN32
+
+string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UC)
+
+set(EFFECTIVE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE_UC}}")
+message(STATUS "Compiler flags = ${EFFECTIVE_C_FLAGS}")
+
+set(EFFECTIVE_LD_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_EXE_LINKER_FLAGS_${CMAKE_BUILD_TYPE_UC}}")
+message(STATUS "Linker flags = ${EFFECTIVE_LD_FLAGS}")
+
 
 #
 # Targets
 #
+
+if(NOT WIN32)
 
 set(DEFAULT_VGL_BUILDSERVER 0)
 if(NOT APPLE AND NOT CYGWIN)
@@ -341,6 +339,7 @@ add_subdirectory(diags)
 add_subdirectory(doc)
 
 endif() # WIN32
+
 
 #
 # Installation and packaging

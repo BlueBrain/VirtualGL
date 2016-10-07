@@ -19,11 +19,13 @@
 #include "ContextHash.h"
 #include "DisplayHash.h"
 #include "GLXDrawableHash.h"
+#include "GlobalCriticalSection.h"
 #include "PixmapHash.h"
 #include "ReverseConfigHash.h"
 #include "VisualHash.h"
 #include "WindowHash.h"
 #include "fakerconfig.h"
+#include "threadlocal.h"
 #include <dlfcn.h>
 
 
@@ -35,13 +37,12 @@ namespace vglfaker
 {
 
 Display *dpy3D=NULL;
-CriticalSection globalMutex;
 bool deadYet=false;
-int traceLevel=0;
+VGL_THREAD_LOCAL(TraceLevel, long, 0)
 #ifdef FAKEXCB
-__thread int fakerLevel=0;
+VGL_THREAD_LOCAL(FakerLevel, long, 0)
 #endif
-__thread bool excludeCurrent=false;
+VGL_THREAD_LOCAL(ExcludeCurrent, bool, false)
 
 
 static void cleanup(void)
@@ -82,10 +83,12 @@ class GlobalCleanup
 
 		~GlobalCleanup()
 		{
-			globalMutex.lock(false);
+			vglfaker::GlobalCriticalSection *gcs=
+				vglfaker::GlobalCriticalSection::getInstance(false);
+			if(gcs) gcs->lock(false);
 			fconfig_deleteinstance();
 			deadYet=true;
-			globalMutex.unlock(false);
+			if(gcs) gcs->unlock(false);
 		}
 };
 GlobalCleanup globalCleanup;
@@ -112,7 +115,7 @@ void init(void)
 	static int init=0;
 
 	if(init) return;
-	CriticalSection::SafeLock l(globalMutex);
+	GlobalCriticalSection::SafeLock l(globalMutex);
 	if(init) return;
 	init=1;
 
@@ -176,7 +179,7 @@ void *_vgl_dlopen(const char *file, int mode)
 {
 	if(!__dlopen)
 	{
-		CriticalSection::SafeLock l(vglfaker::globalMutex);
+		vglfaker::GlobalCriticalSection::SafeLock l(globalMutex);
 		if(!__dlopen)
 		{
 			dlerror();  // Clear error state

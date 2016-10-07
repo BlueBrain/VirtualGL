@@ -3,9 +3,9 @@
 <head>
 <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
 <meta name="language" content="en">
-<meta name="date" content="2015-10-02T11:46:20">
+<meta name="date" content="2016-09-30T19:54:00">
 <meta name="generator" content="deplate.rb 0.8.5">
-<title>User&rsquo;s Guide for VirtualGL 2.5</title>
+<title>User&rsquo;s Guide for VirtualGL 2.5.1</title>
 <link rel="start" href="index.html" title="Frontpage">
 <link rel="chapter" href="index.html#hd001" title="1 Legal Information">
 <link rel="chapter" href="index.html#hd002" title="2 Conventions Used in This Document">
@@ -31,7 +31,7 @@
 <body >
 <a name="#pagetop"></a>
 <div class="title">
-<p class="title">User&rsquo;s Guide for VirtualGL 2.5</p>
+<p class="title">User&rsquo;s Guide for VirtualGL 2.5.1</p>
 </div>
 <a name="file000"></a>
 <p><em>Intended audience:</em> System Administrators, Graphics Programmers, 
@@ -78,6 +78,12 @@ systems, OpenGL and GLX, and X windows.</p>
         <ul class="hd">
             <li class="Itemize-3 hd">
                 <a href="#hd005001" class="hd">5.1 Installing VirtualGL on Linux</a>
+                <ul class="hd">
+                    <li class="Itemize-5 hd">
+                        <a href="#hd005001001" class="hd">5.1.1 Installing a 32-bit VirtualGL 
+                        Package on x86-64 Linux Distributions</a>
+                    </li>
+                </ul>
             </li>
             <li class="Itemize-3 hd">
                 <a href="#hd005002" class="hd">5.2 Installing the VirtualGL Client on OS 
@@ -654,8 +660,8 @@ VirtualGL must be installed on any machine that will act as a VirtualGL server o
 
 <ol class="Ordered numeric">
     <li class="Ordered-1 Ordered" value="1">
-        Download the appropriate VirtualGL binary package for your system from 
-        the 
+        Download the appropriate VirtualGL binary package(s) for your system 
+        from the 
         <span class="remote"><a href="http://sourceforge.net/projects/virtualgl/files" class="remote">Files 
         area</a></span><a name="idx0017"></a> of the 
         <span class="remote"><a href="http://sourceforge.net/projects/virtualgl" class="remote">VirtualGL 
@@ -679,21 +685,42 @@ VirtualGL must be installed on any machine that will act as a VirtualGL server o
         </p></div>
     </li>
     <li class="Ordered-1 Ordered" value="2">
-        Log in as root, cd to the directory where you downloaded the binary 
-        package, and issue the following commands:
+        cd to the directory where you downloaded the binary package(s), and 
+        issue the following commands as root:
         <dl class="Description">
-            <dt class="Description-3 Description">RPM-based systems</dt>
+            <dt class="Description-3 Description">RPM-based systems using YUM</dt>
             <dd class="Description-3 Description">
 <pre class="verbatim">
-rpm&nbsp;-e&nbsp;VirtualGL
+rpm&nbsp;-e&nbsp;VirtualGL&nbsp;--allmatches
+yum&nbsp;install&nbsp;VirtualGL*.rpm
+</pre>
+
+            </dd>
+            <dt class="Description-3 Description">RPM-based systems using DNF</dt>
+            <dd class="Description-3 Description">
+<pre class="verbatim">
+rpm&nbsp;-e&nbsp;VirtualGL&nbsp;--allmatches
+dnf&nbsp;install&nbsp;VirtualGL*.rpm
+</pre>
+
+            </dd>
+            <dt class="Description-3 Description">RPM-based systems using YaST2</dt>
+            <dd class="Description-3 Description">
+<pre class="verbatim">
+rpm&nbsp;-e&nbsp;VirtualGL&nbsp;--allmatches
+yast2&nbsp;--install&nbsp;VirtualGL*.rpm
+</pre>
+
+            </dd>
+            <dt class="Description-3 Description">Other RPM-based systems (dependencies will not be installed automatically)</dt>
+            <dd class="Description-3 Description">
+<pre class="verbatim">
+rpm&nbsp;-e&nbsp;VirtualGL&nbsp;--allmatches
 rpm&nbsp;-i&nbsp;VirtualGL*.rpm
 </pre>
 
-                <div class="important"><p class="important">
-                You may need to add <code>--all-matches</code> to the <code>rpm&nbsp;-e</code> command line if you have installed both the 32-bit and 64-bit VirtualGL RPMs.
-                </p></div>
             </dd>
-            <dt class="Description-3 Description">Debian-based systems</dt>
+            <dt class="Description-3 Description">Debian-based systems (dependencies will not be installed automatically)</dt>
             <dd class="Description-3 Description">
 <pre class="verbatim">
 dpkg&nbsp;-i&nbsp;virtualgl*.deb
@@ -703,6 +730,34 @@ dpkg&nbsp;-i&nbsp;virtualgl*.deb
         </dl>
     </li>
 </ol>
+
+
+<h3 id="hd005001001">5.1.1&nbsp;Installing a 32-bit VirtualGL Package on x86-64 Linux Distributions</h3>
+
+<p>In order to run 32-bit OpenGL applications in VirtualGL, it is necessary 
+to install the 32-bit VirtualGL server components, which depend on a few 
+32-bit system libraries.  Recent x86-64 Linux distributions do not 
+include 32-bit libraries by default, so it will be necessary to perform 
+a few additional steps prior to installing a 32-bit VirtualGL package on 
+some of those distributions.</p>
+
+<dl class="Description">
+    <dt class="Description-1 Description">Red Hat Enterprise Linux 6+ (and work-alikes), Recent Fedora Releases, SuSE/openSUSE</dt>
+    <dd class="Description-1 Description">
+        <br class="itempara" />No additional steps are necessary. <code>yum&nbsp;install</code> / 
+        <code>dnf&nbsp;install</code> / <code>yast2&nbsp;--install</code> takes 
+        care of all of the dependencies for both the 64-bit and 32-bit RPMs.
+    </dd>
+    <dt class="Description-1 Description">Ubuntu 12 and later</dt>
+    <dd class="Description-1 Description">
+        <br class="itempara" />Run the following command as root prior to installing the virtualgl32 
+        package:
+<pre class="verbatim">
+apt-get&nbsp;install&nbsp;libxv1:i386&nbsp;libglu1-mesa:i386
+</pre>
+
+    </dd>
+</dl>
 
 
 
@@ -864,10 +919,24 @@ service&nbsp;lightdm&nbsp;stop
 </pre>
 
             </dd>
-            <dt class="Description-3 Description">Red Hat/Fedora Linux servers</dt>
+            <dt class="Description-3 Description">Red Hat/Fedora Linux servers with SysV init</dt>
             <dd class="Description-3 Description">
 <pre class="verbatim">
 init&nbsp;3
+</pre>
+
+            </dd>
+            <dt class="Description-3 Description">Red Hat/Fedora Linux servers with systemd</dt>
+            <dd class="Description-3 Description">
+<pre class="verbatim">
+systemctl&nbsp;stop&nbsp;gdm.service
+</pre>
+
+            </dd>
+            <dt class="Description-3 Description">Linux servers running MDM</dt>
+            <dd class="Description-3 Description">
+<pre class="verbatim">
+/etc/init.d/mdm&nbsp;stop
 </pre>
 
             </dd>
@@ -989,7 +1058,10 @@ Disable&nbsp;XTEST&nbsp;extension&nbsp;(recommended)?
                 X server, disabling XTEST will prevent them from inserting keystrokes or 
                 mouse events and thus hijacking local X sessions on that X server.
                 <div class="important"><p class="important">
-                Certain Linux distributions do not have the X server command-line entries in their GDM configuration files.  On these distributions, it will be necessary to run <code>gdmsetup</code> and manually add an argument of <code>-tst</code> to the X server command line to disable XTEST for the first time.  After this, <code>vglserver_config</code> should be able to disable and enable XTEST properly.  This is known to be necessary for openSUSE 10 and Red Hat Enterprise Linux 5.
+                If you are using GDM 2.14 through 2.20, it will be necessary to run <code>gdmsetup</code> and manually add an argument of <code>-tst</code> to the X server command line to disable XTEST for the first time.  After this, <code>vglserver_config</code> should be able to disable and enable XTEST properly.
+                </p></div>
+                <div class="important"><p class="important">
+                GDM 2.22 and later no longer provide a means of editing the X server command line, so disabling XTEST will not work.  The only known alternative as of this writing is to use a different display manager.
                 </p></div>
             </dd>
             <dt class="Description-3 Description">No</dt>
@@ -1031,11 +1103,23 @@ service&nbsp;lightdm&nbsp;start
 /etc/init.d/xdm&nbsp;start
 </pre>
 
-            </dd>
-            <dt class="Description-3 Description">Red Hat/Fedora Linux servers</dt>
-            <dd class="Description-3 Description">
+        Red Hat/Fedora Linux servers with SysV init:: 
 <pre class="verbatim">
 init&nbsp;5
+</pre>
+
+            </dd>
+            <dt class="Description-3 Description">Red Hat/Fedora Linux servers with systemd</dt>
+            <dd class="Description-3 Description">
+<pre class="verbatim">
+systemctl&nbsp;start&nbsp;gdm.service
+</pre>
+
+            </dd>
+            <dt class="Description-3 Description">Linux servers running MDM</dt>
+            <dd class="Description-3 Description">
+<pre class="verbatim">
+/etc/init.d/mdm&nbsp;start
 </pre>
 
             </dd>
@@ -2127,85 +2211,113 @@ vglrun&nbsp;vmware&nbsp;-X&nbsp;{VM&nbsp;path}/{VM&nbsp;name}.vmx
   <thead class="standard">
   <tr class="head ">
     <th class="head standard">Application</th>
+    <th class="head standard">Versions Known to Require Recipe</th>
     <th class="head standard">Platform</th>
     <th class="head standard">Recipe</th>
     <th class="head standard">Notes</th>
   </tr>
   </thead>
   <tr class="standard">
-    <td class="standard">Abaqus v6</td>
+    <td class="standard">Abaqus</td>
+    <td class="standard">v6</td>
     <td class="standard">Linux</td>
     <td class="standard">It is necessary to add <br /><br /> <code>import&nbsp;os</code><br /> <code>os.environ['ABAQUS_EMULATE_OVERLAYS']&nbsp;=&nbsp;&quot;1&quot;</code> <br /><br /> to <code>/{abaqus_install_dir}/{abaqus_version}/site/abaqus_v6.env</code> to make Abaqus v6 work properly with VirtualGL if the 2D X server does not support transparent overlays.  If this is not done, then the application may fail to launch, fail to display the 3D pixels, or the 3D pixels may become corrupted whenever other windows obscure them.</td>
     <td class="standard">VirtualGL does not redirect the rendering of transparent overlays, since those cannot be rendered in a Pbuffer.  Thus, in order to use transparent overlays, the 2D X server must be able to render them, which is rarely the case for X proxies (see Section <a href="#overlays" class="ref">16.2</a> for more details.)  Setting <code>ABAQUS_EMULATE_OVERLAYS</code> to <code>1</code> causes the application to emulate overlay rendering instead of using actual transparent overlays.  This workaround is known to be necessary when running Abaqus 6.9 and 6.10 in VNC.</td>
   </tr>
   <tr class="standard">
-    <td class="standard">Abaqus v6</td>
+    <td class="standard">Abaqus</td>
+    <td class="standard">v6</td>
     <td class="standard">Linux</td>
     <td class="standard"><code>vglrun&nbsp;-nodl&nbsp;{abaqus_path}/abaqus</code></td>
     <td class="standard">User reports indicate that Abaqus 6.9 will not work properly if <code>libdlfaker.so</code> from VirtualGL is preloaded into it.  This may be true for other versions of Abaqus as well.</td>
   </tr>
   <tr class="standard">
-    <td class="standard">Cadence Allegro v16.5</td>
+    <td class="standard">Cadence Allegro</td>
+    <td class="standard">v16.5</td>
     <td class="standard">Linux</td>
     <td class="standard"><code>vglrun&nbsp;+sync&nbsp;allegro</code></td>
     <td class="standard">Allegro relies on mixed X11/OpenGL rendering, and thus certain features (specifically the <code>pcb_cursor_infinite</code> cursor style) do not work properly unless <code>VGL_SYNC</code> is enabled.  If <code>VGL_SYNC</code> is not enabled, then the crosshairs may remain on the screen.  Since <code>VGL_SYNC</code> automatically enables the X11 transport and disables frame spoiling, it is highly recommended that you use an X proxy when <code>VGL_SYNC</code> is enabled. See Section <a href="#VGL_SYNC" class="ref">19.1</a> for further information.</td>
   </tr>
   <tr class="standard">
-    <td class="standard">Animator 4</td>
+    <td class="standard">Animator</td>
+    <td class="standard">v4</td>
     <td class="standard">Linux</td>
     <td class="standard">Comment out the line that reads <br /><br /> <code>unsetenv&nbsp;LD_PRELOAD</code> <br /><br /> in the <code>a4</code> script, then launch Animator 4 using <br /><br /> <code>vglrun&nbsp;-ge&nbsp;a4</code> <br /><br /></td>
     <td class="standard">When the <code>a4</code> script unsets <code>LD_PRELOAD</code>, this prevents VirtualGL from being loaded into the application.  Animator 4 additionally checks the value of <code>LD_PRELOAD</code> and attempts to unset it from inside the application.  Using <code>vglrun&nbsp;-ge</code> to launch the application fools Animator 4 into thinking that <code>LD_PRELOAD</code> is unset.</td>
   </tr>
   <tr class="standard">
-    <td class="standard">ANSA v12.1.0</td>
+    <td class="standard">ANSA</td>
+    <td class="standard">v12.1.0</td>
     <td class="standard">Linux</td>
     <td class="standard">Add <br /><br /> <code>LD_PRELOAD_SAVE=$LD_PRELOAD</code><br /> <code>export&nbsp;LD_PRELOAD=</code> <br /><br /> to the top of the <code>ansa.sh</code> script, then add <br /><br /> <code>export&nbsp;LD_PRELOAD=$LD_PRELOAD_SAVE</code> <br /><br /> just prior to the <code>${ANSA_EXEC_DIR}bin/ansa_linux${ext2}</code> line.</td>
     <td class="standard">The ANSA startup script directly invokes <code>/lib/libc.so.6</code> to query the glibc version.  Since the VirtualGL faker depends on libc, preloading VirtualGL when directly invoking <code>libc.so.6</code> creates an infinite loop. Thus, it is necessary to disable the preloading of VirtualGL in the application script and then re-enable it prior to launching the actual application.</td>
   </tr>
   <tr class="standard">
     <td class="standard">ANSYS HFSS, ANSYS ICEM CFD, Roxar RMS</td>
+    <td class="standard">All</td>
     <td class="standard">Linux</td>
     <td class="standard">Set the <code>VGL_SPOILLAST</code> environment variable to <code>0</code> prior to launching the application with <code>vglrun</code></td>
     <td class="standard">These applications draw node highlighting and/or rubber banding directly to the front buffer.  In order for these front buffer operations to be displayed properly, it is necessary to use the &ldquo;spoil first&rdquo; frame spoiling algorithm whenever the application calls <code>glFlush()</code>.  See Section <a href="#VGL_SPOILLAST" class="ref">19.1</a> for further information.</td>
   </tr>
   <tr class="standard">
-    <td class="standard">AutoForm v4.0x</td>
+    <td class="standard">AutoForm</td>
+    <td class="standard">v4.0x</td>
     <td class="standard">All</td>
     <td class="standard"><code>vglrun&nbsp;+sync&nbsp;xaf_</code><em><code>{version}</code></em></td>
     <td class="standard">AutoForm relies on mixed X11/OpenGL rendering, and thus certain features (particularly the &ldquo;Dynamic Section&rdquo; dialog and &ldquo;Export Image&rdquo; feature) do not work properly unless <code>VGL_SYNC</code> is enabled.  Since <code>VGL_SYNC</code> automatically enables the X11 transport and disables frame spoiling, it is highly recommended that you use an X proxy when <code>VGL_SYNC</code> is enabled. See Section <a href="#VGL_SYNC" class="ref">19.1</a> for further information.</td>
   </tr>
   <tr class="standard">
-    <td class="standard">Cedega v6.0.x</td>
+    <td class="standard">Cedega</td>
+    <td class="standard">v6.0.x</td>
     <td class="standard">Linux</td>
     <td class="standard">Add <br /><br /> <code>export&nbsp;LD_PRELOAD=libvglfaker.so</code> <br /><br /> to the top of <code>~/.cedega/.winex_ver/winex-{version}/bin/winex3</code>, then run Cedega as you would normally (without <code>vglrun</code>.)  Since <code>vglrun</code> is not being used, it is necessary to use environment variables or the VirtualGL Configuration dialog to modify VirtualGL&rsquo;s configuration.</td>
     <td class="standard">The actual binary (WineX) that uses OpenGL is buried beneath several layers of Python and shell scripts.  The <code>LD_PRELOAD</code> variable does not get propagated down from the initial shell that invoked <code>vglrun</code>.</td>
   </tr>
   <tr class="standard">
-    <td class="standard">Google Chrome/Chromium v31 and later</td>
+    <td class="standard">Google Chrome/Chromium</td>
+    <td class="standard">v31 and later</td>
     <td class="standard">Linux</td>
     <td class="standard"><code>vglrun&nbsp;google-chrome&nbsp;--disable-gpu-sandbox</code><br /> or<br /> <code>vglrun&nbsp;chromium&nbsp;--disable-gpu-sandbox</code></td>
     <td class="standard">By default, Chrome/Chromium uses a separate process to perform 3D rendering (WebGL), and for reasons that are not yet fully understood, this breaks VirtualGL.  The <code>--disable-gpu-sandbox</code> option causes 3D rendering to be performed within the browser process.</td>
   </tr>
   <tr class="standard">
     <td class="standard">Compiz</td>
+    <td class="standard">All</td>
     <td class="standard">Linux</td>
     <td class="standard">Set the <code>VGL_WM</code> environment variable to <code>1</code> prior to launching the window manager with <code>vglrun</code>, or pass an argument of <code>+wm</code> to <code>vglrun</code>.</td>
     <td class="standard">See Section <a href="#VGL_WM" class="ref">19.1</a> for further information.</td>
   </tr>
   <tr class="standard">
     <td class="standard">Heretic II</td>
+    <td class="standard">All</td>
     <td class="standard">Linux</td>
     <td class="standard"><code>vglrun&nbsp;heretic2&nbsp;+set&nbsp;vid_ref&nbsp;glx</code></td>
     <td class="standard"></td>
   </tr>
   <tr class="standard">
-    <td class="standard">Mathematica 7</td>
+    <td class="standard">Intel OpenCL ICD</td>
+    <td class="standard">All</td>
+    <td class="standard">Linux</td>
+    <td class="standard"><code>vglrun&nbsp;-ld&nbsp;{path_to_Intel_OpenCL_libs}&nbsp;{application}</code></td>
+    <td class="standard">The Intel OpenCL installable client driver (ICD) is linked with a run-time library search path (rpath) of <code>$ORIGIN</code>, which would normally have the same effect as adding the directory in which the ICD is installed (default: <code>/opt/intel/opencl/lib64</code> on 64-bit systems) to <code>LD_LIBRARY_PATH</code>.  However, when VirtualGL is interposing the <code>dlopen()</code> function (which it does by default), this causes the actual <code>dlopen()</code> system calls to come from <code>libdlfaker.so</code>, so <code>$ORIGIN</code> will resolve to the directory in which the VirtualGL faker libraries are installed.  This causes the <code>dlopen()</code> calls within the Intel ICD to fail, and because the ICD apparently does not check the return value of those calls, a segfault occurs.  The workaround is simply to add the Intel ICD library path to <code>LD_LIBRARY_PATH</code>, which is most easily accomplished with <code>vglrun&nbsp;-ld</code>.</td>
+  </tr>
+  <tr class="standard">
+    <td class="standard">Mathematica</td>
+    <td class="standard">v7</td>
     <td class="standard">Linux</td>
     <td class="standard">Set the <code>VGL_ALLOWINDIRECT</code> environment variable to <code>1</code> prior to launching the application with <code>vglrun</code></td>
     <td class="standard">Mathematica 7 will not draw the axis numbers on 3D charts correctly unless it is allowed to create an indirect OpenGL context.  See Section <a href="#VGL_ALLOWINDIRECT" class="ref">19.1</a> for further information.</td>
   </tr>
   <tr class="standard">
-    <td class="standard">Tecplot 360 2011 and earlier</td>
+    <td class="standard">MATLAB</td>
+    <td class="standard">All</td>
+    <td class="standard">Linux</td>
+    <td class="standard"><code>vglrun&nbsp;/usr/local/MATLAB/{version}/bin/matlab&nbsp;-nosoftwareopengl</code></td>
+    <td class="standard">MATLAB will automatically use its built-in (unaccelerated) OpenGL implementation if it detects that it is running in a remote display environment.  More specifically, it will always enable software OpenGL if the X server has an X extension called <code>VNC-EXTENSION</code>, which is the case with TurboVNC, TigerVNC, and RealVNC.</td>
+  </tr>
+  <tr class="standard">
+    <td class="standard">Tecplot 360</td>
+    <td class="standard">2011 and earlier</td>
     <td class="standard">Linux</td>
     <td class="standard">Set the <code>VGL_GLFLUSHTRIGGER</code> environment variable to <code>0</code> prior to launching the application with <code>vglrun</code></td>
     <td class="standard">When running in TurboVNC (using VirtualGL), flashing artifacts will be produced when the user zooms/pans/rotates the scene in Tecplot 360, unless VirtualGL is instructed not to use <code>glFlush()</code> as an end-of-frame trigger.  This has been fixed in Tecplot 2012 and later. See Section <a href="#VGL_GLFLUSHTRIGGER" class="ref">19.1</a> for further information.</td>

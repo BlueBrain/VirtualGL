@@ -138,7 +138,8 @@ static void buildVisAttribTable(Display *dpy, int screen)
 	}
 	catch(...)
 	{
-		if(visuals) XFree(visuals);  if(va) { delete [] va;  va=NULL; }
+		if(visuals) XFree(visuals);
+		if(va) { delete [] va;  va=NULL; }
 		vaDisplay=NULL;  vaScreen=-1;  vaEntries=0;
 		throw;
 	}
@@ -233,9 +234,18 @@ GLXFBConfig *configsFromVisAttribs(const int attribs[],
 	glxattribs[j++]=GLX_RENDER_TYPE;  glxattribs[j++]=renderType;
 	if(fconfig.forcealpha==1 && redSize>0 && greenSize>0 && blueSize>0
 		&& alphaSize<1) alphaSize=1;
-	glxattribs[j++]=GLX_RED_SIZE;  glxattribs[j++]=redSize;
-	glxattribs[j++]=GLX_GREEN_SIZE;  glxattribs[j++]=greenSize;
-	glxattribs[j++]=GLX_BLUE_SIZE;  glxattribs[j++]=blueSize;
+	if(redSize>=0)
+	{
+		glxattribs[j++]=GLX_RED_SIZE;  glxattribs[j++]=redSize;
+	}
+	if(greenSize>=0)
+	{
+		glxattribs[j++]=GLX_GREEN_SIZE;  glxattribs[j++]=greenSize;
+	}
+	if(blueSize>=0)
+	{
+		glxattribs[j++]=GLX_BLUE_SIZE;  glxattribs[j++]=blueSize;
+	}
 	if(alphaSize>=0)
 	{
 		glxattribs[j++]=GLX_ALPHA_SIZE;  glxattribs[j++]=alphaSize;
@@ -253,9 +263,16 @@ GLXFBConfig *configsFromVisAttribs(const int attribs[],
 	if(fconfig.drawable==RRDRAWABLE_PIXMAP)
 		glxattribs[j++]=GLX_PIXMAP_BIT|GLX_WINDOW_BIT;
 	else
-		glxattribs[j++]=GLX_PIXMAP_BIT|GLX_PBUFFER_BIT;
+	{
+        if (samples==-1)
+            glxattribs[j++]=GLX_PIXMAP_BIT|GLX_PBUFFER_BIT;
+        else
+            glxattribs[j++]=GLX_PBUFFER_BIT;
+	}
 	glxattribs[j++]=GLX_X_VISUAL_TYPE;  glxattribs[j++]=visualType;
 	glxattribs[j]=None;
+
+	if(fconfig.trace) prargal13(glxattribs);
 
 	return _glXChooseFBConfig(_dpy3D, DefaultScreen(_dpy3D), glxattribs,
 		&nElements);
